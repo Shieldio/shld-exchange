@@ -1,0 +1,9 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {execute,quote,INITIAL_CASH,INITIAL_UNITS,INITIAL_RESERVE} from '../src/market.js';
+const m=()=>({units:INITIAL_UNITS,reserve:INITIAL_RESERVE});
+const p=()=>({cash:INITIAL_CASH,units:0});
+test('BUY raises price and conserves cash and supply',()=>{const a=m(),b=p(),r=execute(a,b,'BUY',10,Number.MAX_SAFE_INTEGER);assert.ok(r.market.reserve/r.market.units>a.reserve/a.units);assert.equal(r.market.reserve+r.player.cash,a.reserve+b.cash);assert.equal(r.market.units+r.player.units,a.units+b.units);});
+test('SELL lowers price; round-trip loses spread',()=>{const buy=execute(m(),p(),'BUY',10,Number.MAX_SAFE_INTEGER);const sell=execute(buy.market,buy.player,'SELL',10,1);assert.ok(sell.market.reserve/sell.market.units<buy.market.reserve/buy.market.units);assert.ok(sell.player.cash<INITIAL_CASH);assert.equal(sell.player.units,0);});
+test('rejects invalid quantity, shorting, insufficient funds and slippage',()=>{for(const q of [0,-1,1.2,NaN,Infinity,1001,'10'])assert.throws(()=>quote(m(),'BUY',q));assert.throws(()=>quote(m(),'HACK',1));assert.throws(()=>execute(m(),p(),'SELL',1,1));assert.throws(()=>execute(m(),{cash:0,units:0},'BUY',1,999999));assert.throws(()=>execute(m(),p(),'BUY',10,1));assert.throws(()=>execute(m(),{cash:0,units:10},'SELL',1,999999));});
+test('10000 mixed trades preserve integer balances and conservation',()=>{let market=m(),player=p();for(let i=0;i<10000;i++){const side=i%2?'SELL':'BUY',q=1+i%10;try{const r=execute(market,player,side,q,side==='BUY'?Number.MAX_SAFE_INTEGER:1);market=r.market;player=r.player;}catch{}assert.ok(player.cash>=0&&player.units>=0);assert.ok(Number.isSafeInteger(player.cash));assert.equal(market.units+player.units,INITIAL_UNITS);assert.equal(market.reserve+player.cash,INITIAL_RESERVE+INITIAL_CASH);}});
