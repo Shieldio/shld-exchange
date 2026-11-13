@@ -22,7 +22,7 @@ export class Exchange {
   rows(q,...args){return this.sql.exec(q,...args).toArray();}
   state() {
     const market=this.rows('SELECT units,reserve FROM market WHERE id=1')[0];
-    return {market,price:market.reserve/market.units/100,players:this.rows('SELECT id,name,cash,units FROM players ORDER BY id'),trades:this.rows('SELECT t.id,t.player,p.name,t.side,t.quantity,t.total,t.price,t.ts FROM trades t JOIN players p ON p.id=t.player ORDER BY t.id DESC LIMIT 200'),count:this.rows('SELECT COUNT(*) AS n FROM trades')[0].n};
+    return {market,price:market.reserve/market.units/100,players:this.rows('SELECT id,name,cash,units FROM players ORDER BY id'),trades:this.rows('SELECT t.id,t.player,p.name,t.side,t.quantity,t.total,t.price,t.ts FROM trades t JOIN players p ON p.id=t.player ORDER BY t.id DESC LIMIT 200'),count:this.rows('SELECT COALESCE(MAX(id),0) AS n FROM trades')[0].n};
   }
   player(req){const token=(req.headers.get('Cookie')||'').match(/(?:^|;\s*)shld=([a-f0-9]{64})(?:;|$)/)?.[1];return token?this.rows('SELECT * FROM players WHERE token=?',token)[0]:null;}
   broadcast(){const msg=JSON.stringify(this.state());for(const ws of this.ctx.getWebSockets())try{ws.send(msg);}catch{ws.close(1011,'Reconnect');}}

@@ -3,6 +3,7 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-11-13",
   "workers_dev": true,
+  "preview_urls": false,
   "durable_objects": {"bindings": [{"name": "EXCHANGE", "class_name": "Exchange"}]},
   "migrations": [{"tag": "v1", "new_sqlite_classes": ["Exchange"]}],
   "observability": {"enabled": false}
